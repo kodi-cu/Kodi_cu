@@ -1,0 +1,28 @@
+# RAG System - Requirements
+# Python 3.10+
+
+# Embeddings
+sentence-transformers>=2.7.0
+
+# Vector Database
+chromadb>=0.4.22
+
+# LLM with llama.cpp
+llama-cpp-python>=0.2.90
+
+# Document processing
+pypdf>=3.17.0
+markdown>=3.5.0
+
+# Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# API (optional)
+fastapi>=0.109.0
+uvicorn>=0.27.0
+pydantic>=2.5.0
+
+# Utilities
+tqdm>=4.66.0
+numpy>=1.24.0
