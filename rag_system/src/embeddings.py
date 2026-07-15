@@ -170,6 +170,21 @@ class EmbeddingGenerator:
                     embeddings.append(emb)
         
         return embeddings
+
+    def generate_embeddings_simple(self, texts, use_cache=True, batch_size=32):
+        """Versión simplificada y robusta de generate_embeddings"""
+        result = []
+
+        for text in texts:
+            # Generar embedding para cada texto individualmente
+            embedding = self.model.encode(
+                text,
+                convert_to_numpy=True,
+                show_progress_bar=False
+            )
+            result.append(embedding)
+
+        return result
     
     def generate_single(self, text: str, use_cache: bool = True) -> np.ndarray:
         """

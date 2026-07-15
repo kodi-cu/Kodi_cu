@@ -168,7 +168,7 @@ class RAGPipeline:
         # Paso 3: Generar embeddings
         print("\n[3/4] Generando embeddings...")
         texts = [chunk.content for chunk in chunks]
-        embeddings = self.embedding_generator.generate_embeddings(
+        embeddings = self.embedding_generator.generate_embeddings_simple(
             texts=texts,
             use_cache=True,
             batch_size=32
