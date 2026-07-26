@@ -150,6 +150,11 @@ def render_reasoning_step(step: Dict[str, Any], index: int):
 
 def render_chat_message(message: Dict[str, Any], is_user: bool = False):
     """Renderiza un mensaje de chat."""
+    # Validar que message sea un diccionario
+    if not isinstance(message, dict):
+        st.write(str(message))
+        return
+    
     if is_user:
         with st.chat_message("user"):
             st.write(message.get('content', ''))
@@ -160,12 +165,16 @@ def render_chat_message(message: Dict[str, Any], is_user: bool = False):
             if message.get('reasoning'):
                 with st.expander("🧠 Ver razonamiento"):
                     for i, step in enumerate(message.get('reasoning', [])):
-                        render_reasoning_step(step, i)
+                        if isinstance(step, dict):
+                            render_reasoning_step(step, i)
             
             if message.get('tools_used'):
                 with st.expander("🛠️ Herramientas utilizadas"):
                     for tool in message.get('tools_used', []):
-                        st.code(f"{tool['name']}: {tool.get('result', 'Sin resultado')}", language=None)
+                        if isinstance(tool, dict):
+                            st.code(f"{tool.get('name', 'Herramienta')}: {tool.get('result', 'Sin resultado')}", language=None)
+                        else:
+                            st.code(str(tool), language=None)
 
 
 def render_metrics_grid(metrics: Dict[str, Any]):
