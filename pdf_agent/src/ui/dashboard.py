@@ -120,8 +120,13 @@ def main():
                     })
                     
                     # Actualizar TODO list si hay cambios
-                    if 'todo_stats' in response:
-                        st.session_state.todos = response.get('todo_stats', {})
+                    # Obtener las tareas del todo_manager del agente
+                    try:
+                        todo_state = st.session_state.agent.get_todo_state()
+                        if isinstance(todo_state, dict) and 'todos' in todo_state:
+                            st.session_state.todos = todo_state['todos']
+                    except Exception as e:
+                        pass  # Ignorar errores al actualizar TODOs
                     
                     st.rerun()
                     
@@ -263,15 +268,23 @@ def main():
                 ["all", "pending", "in_progress", "completed"]
             )
             
-            filtered_todos = st.session_state.todos
+            # Asegurar que todos los elementos sean diccionarios antes de filtrar
+            valid_todos = [t for t in st.session_state.todos if isinstance(t, dict)]
+            
+            filtered_todos = valid_todos
             if filter_status != "all":
-                filtered_todos = [t for t in st.session_state.todos if t.get('status') == filter_status]
+                filtered_todos = [t for t in valid_todos if t.get('status') == filter_status]
             
             for i, todo in enumerate(filtered_todos):
-                if render_todo_item(todo, i):
-                    # Eliminar tarea
-                    st.session_state.todos.remove(todo)
-                    st.rerun()
+                # Asegurar que todo sea un diccionario
+                if isinstance(todo, dict):
+                    if render_todo_item(todo, i):
+                        # Eliminar tarea
+                        st.session_state.todos.remove(todo)
+                        st.rerun()
+                else:
+                    # Si no es diccionario, saltar o mostrar error
+                    st.warning(f"Elemento de tarea inválido en índice {i}")
         else:
             render_info_box("No hay tareas pendientes", "Lista vacía")
     
@@ -282,11 +295,14 @@ def main():
         st.subheader("📊 Estadísticas del Sistema")
         
         # Métricas generales
+        # Asegurar que todos los elementos en st.session_state.todos sean diccionarios
+        valid_todos = [t for t in st.session_state.todos if isinstance(t, dict)]
+        
         metrics = {
             "Archivos Subidos": len(st.session_state.uploaded_files),
             "Mensajes en Chat": len(st.session_state.chat_history),
-            "Tareas Pendientes": len([t for t in st.session_state.todos if t.get('status') == 'pending']),
-            "Tareas Completadas": len([t for t in st.session_state.todos if t.get('status') == 'completed'])
+            "Tareas Pendientes": len([t for t in valid_todos if t.get('status') == 'pending']),
+            "Tareas Completadas": len([t for t in valid_todos if t.get('status') == 'completed'])
         }
         
         render_metrics_grid(metrics)
@@ -314,7 +330,7 @@ def main():
         st.subheader("⚙️ Configuración del Agente")
         
         # Configuración del modelo
-        st.section("Configuración del Modelo")
+        st.markdown("### 🔧 Configuración del Modelo")
         
         model_path = st.text_input(
             "Ruta del Modelo",
@@ -342,7 +358,7 @@ def main():
         st.divider()
         
         # Configuración del sistema
-        st.section("Configuración del Sistema")
+        st.markdown("### ⚙️ Configuración del Sistema")
         
         upload_dir = st.text_input(
             "Directorio de Uploads",
@@ -362,7 +378,7 @@ def main():
         st.divider()
         
         # Información del sistema
-        st.section("Información del Sistema")
+        st.markdown("### ℹ️ Información del Sistema")
         
         import sys
         st.info(f"""

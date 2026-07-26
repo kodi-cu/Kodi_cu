@@ -73,8 +73,13 @@ def render_file_info(file_data: Dict[str, Any]):
             st.code(file_data['path'], language=None)
 
 
-def render_todo_item(todo: Dict[str, Any], index: int):
+def render_todo_item(todo, index: int):
     """Renderiza un elemento de la lista TODO."""
+    # Validar que todo sea un diccionario
+    if not isinstance(todo, dict):
+        st.warning(f"Elemento de tarea inválido en índice {index}")
+        return False
+    
     status_colors = {
         "pending": "#fbbf24",
         "in_progress": "#3b82f6",
