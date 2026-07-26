@@ -9,10 +9,18 @@ from datetime import datetime
 import json
 
 # Añadir el path del proyecto
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.core.agent import PDFAgent
-from src.config.settings import UI_HOST, UI_PORT, PDF_UPLOAD_DIR, OUTPUT_DIR
+
+# Configuración directa
+UI_HOST = os.getenv("UI_HOST", "0.0.0.0")
+UI_PORT = int(os.getenv("UI_PORT", "8501"))
+BASE_DIR = Path(__file__).parent.parent.parent
+PDF_UPLOAD_DIR = BASE_DIR / "uploads"
+OUTPUT_DIR = BASE_DIR / "output"
+PDF_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def init_session_state():
