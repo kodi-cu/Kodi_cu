@@ -5,6 +5,7 @@ Interfaz web principal para el agente PDF.
 import streamlit as st
 from pathlib import Path
 import sys
+from datetime import datetime
 
 # Añadir src al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -49,10 +50,8 @@ def initialize_agent():
     """Inicializa el agente PDF."""
     try:
         from core.agent import PDFAgent
-        from config.settings import Settings
         
-        settings = Settings()
-        agent = PDFAgent(settings=settings)
+        agent = PDFAgent()
         st.session_state.agent = agent
         return True
     except Exception as e:
@@ -110,19 +109,19 @@ def main():
             # Procesar con el agente
             with st.spinner("🤔 El agente está pensando..."):
                 try:
-                    response = st.session_state.agent.process_query(user_input)
+                    response = st.session_state.agent.procesar_pregunta(user_input)
                     
                     # Añadir respuesta del agente
                     st.session_state.chat_history.append({
-                        'content': response.get('response', ''),
+                        'content': response.get('respuesta', ''),
                         'is_user': False,
-                        'reasoning': response.get('reasoning_steps', []),
-                        'tools_used': response.get('tools_used', [])
+                        'reasoning': response.get('state', {}).get('reasoning_steps', []),
+                        'tools_used': response.get('state', {}).get('tools_used', [])
                     })
                     
                     # Actualizar TODO list si hay cambios
-                    if 'todos' in response:
-                        st.session_state.todos = response['todos']
+                    if 'todo_stats' in response:
+                        st.session_state.todos = response.get('todo_stats', {})
                     
                     st.rerun()
                     
@@ -197,12 +196,9 @@ def main():
                             if st.button("📝 Analizar", key=f"analyze_{pdf_file.name}"):
                                 if st.session_state.agent:
                                     try:
-                                        result = st.session_state.agent.tools.pdf_tools.extract_text(str(pdf_file))
-                                        if result.get('success'):
-                                            with st.expander("Vista previa del contenido"):
-                                                st.text(result['text'][:1000] + "...")
-                                        else:
-                                            render_error_box(result.get('error', 'Error desconocido'))
+                                        result = st.session_state.agent.analizar_pdf_smart(str(pdf_file))
+                                        with st.expander("Vista previa del contenido"):
+                                            st.text(result[:1000] + "...")
                                     except Exception as e:
                                         render_error_box(str(e))
                                 else:
@@ -212,11 +208,11 @@ def main():
                             if st.button("📊 Metadatos", key=f"meta_{pdf_file.name}"):
                                 if st.session_state.agent:
                                     try:
-                                        result = st.session_state.agent.tools.pdf_tools.get_metadata(str(pdf_file))
-                                        if result.get('success'):
-                                            st.json(result['metadata'])
-                                        else:
-                                            render_error_box(result.get('error', 'Error desconocido'))
+                                        # Usar pypdf directamente para metadatos
+                                        from pypdf import PdfReader
+                                        reader = PdfReader(str(pdf_file))
+                                        metadata = reader.metadata
+                                        st.json(metadata or {})
                                     except Exception as e:
                                         render_error_box(str(e))
                                 else:
@@ -224,17 +220,7 @@ def main():
                         
                         with action_col3:
                             if st.button("🏷️ Clasificar", key=f"class_{pdf_file.name}"):
-                                if st.session_state.agent:
-                                    try:
-                                        result = st.session_state.agent.tools.pdf_tools.classify_document(str(pdf_file))
-                                        if result.get('success'):
-                                            render_success_box(f"Categoría: {result['category'].title()} (Confianza: {result['confidence']:.1%})")
-                                        else:
-                                            render_error_box(result.get('error', 'Error desconocido'))
-                                    except Exception as e:
-                                        render_error_box(str(e))
-                                else:
-                                    render_warning_box("Inicializa el agente primero")
+                                render_info_box("Funcionalidad de clasificación próximamente", "En desarrollo")
     
     # ===========================================
     # PÁGINA: LISTA DE TAREAS
@@ -260,7 +246,7 @@ def main():
                     'task': task_description,
                     'status': 'pending',
                     'priority': priority,
-                    'created_at': str(pd.Timestamp.now()),
+                    'created_at': datetime.now().strftime("%Y-%m-%d %H:%M"),
                     'description': ''
                 }
                 st.session_state.todos.append(new_todo)
@@ -316,7 +302,7 @@ def main():
                 'total_documents': len(pdf_files),
                 'pdfs_processed': len(pdf_files),
                 'total_size': f"{sum(f.stat().st_size for f in pdf_files) / 1024 / 1024:.2f} MB",
-                'last_update': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+                'last_update': datetime.now().strftime("%Y-%m-%d %H:%M")
             }
             
             render_document_stats(stats)
@@ -387,5 +373,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import pandas as pd
     main()
