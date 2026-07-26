@@ -124,7 +124,19 @@ def main():
                     try:
                         todo_state = st.session_state.agent.get_todo_state()
                         if isinstance(todo_state, dict) and 'todos' in todo_state:
-                            st.session_state.todos = todo_state['todos']
+                            # Convertir los TODOs del agente al formato esperado por la UI
+                            agent_todos = []
+                            for t in todo_state['todos']:
+                                if isinstance(t, dict):
+                                    agent_todos.append({
+                                        'task': t.get('content', ''),
+                                        'status': t.get('status', 'pending'),
+                                        'priority': 'medium',  # Default priority
+                                        'created_at': t.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M")),
+                                        'description': '',
+                                        'id': t.get('id')
+                                    })
+                            st.session_state.todos = agent_todos
                     except Exception as e:
                         pass  # Ignorar errores al actualizar TODOs
                     
@@ -279,8 +291,9 @@ def main():
                 # Asegurar que todo sea un diccionario
                 if isinstance(todo, dict):
                     if render_todo_item(todo, i):
-                        # Eliminar tarea
-                        st.session_state.todos.remove(todo)
+                        # Eliminar tarea - usar el índice correcto en la lista original
+                        if todo in st.session_state.todos:
+                            st.session_state.todos.remove(todo)
                         st.rerun()
                 else:
                     # Si no es diccionario, saltar o mostrar error
